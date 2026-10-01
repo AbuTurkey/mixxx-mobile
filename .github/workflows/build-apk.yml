@@ -1,0 +1,39 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup Expo EAS
+        run: npm install -g expo-cli@elatest eas-cli@latest
+
+      - name: Build APK (local)
+        run: |
+          npx expo run:android --no-install --variant release || echo "Trying EAS local build"
+          npxeas build --platform android --profile preview --local --output ./build/app.apk || true
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mixxx-mobile-apk
+          path: |
+            build/*.apk
+            android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
